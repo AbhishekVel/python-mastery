@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Optional, Sequence, Type
 
 class TableFormatter(ABC):
     @abstractmethod
@@ -26,6 +26,16 @@ class CSVTableFormatter(TableFormatter):
 
     def row (self, rowdata):
         print(','.join(str(item) for item in rowdata))
+        
+class ColumnFormatMixin:
+    formats: list[str] = []
+    def row(self, rowdata):
+        rowdata = [(fmt % d) for fmt,d in zip(self.formats, rowdata)]
+        super().row(rowdata)
+
+class UpperHeadersMixin:
+    def headings(self, headers):
+        super().headings([h.upper() for h in headers])
 
 def print_table(objects: Sequence[object], attributes: list[str], formatter: TableFormatter):
     formatter.headings(attributes)
@@ -34,10 +44,18 @@ def print_table(objects: Sequence[object], attributes: list[str], formatter: Tab
         formatter.row(rowdata)
         
 
-def create_formatter(fmt: str) -> TableFormatter:
+def create_formatter(fmt: str, column_formats=['%s', '%d', '%0.2f']):
+    
+    formatter: Optional[Type[CSVTableFormatter | TextTableFormatter]] = None
     if fmt == 'csv':
-        return CSVTableFormatter()
+        formatter =  CSVTableFormatter
     elif fmt == 'text':
-        return TextTableFormatter()
-    else:
+        formatter = TextTableFormatter
+    
+    if formatter is None:
         raise ValueError("Unsupported fmt")
+        
+    class formatter_cls(ColumnFormatMixin):
+        formats = column_formats
+
+    return formatter_cls()
