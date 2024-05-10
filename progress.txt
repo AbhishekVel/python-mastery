@@ -1,1 +1,6 @@
-4.1
+4.3
+
+# TODO:
+SqlAlchemy uses descriptors as part of the ORM mapped classes. Look into how they do that and see if I can replicate that sort of behavior.
+
+
